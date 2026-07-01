@@ -195,7 +195,7 @@ def classify_email(email: dict) -> str:
     )
 
     msg = llm.messages.create(
-        model="claude-3-5-haiku-20241022",
+        model="claude-haiku-4-5-20251001",
         max_tokens=10,
         system=_CLASSIFY_SYSTEM,
         messages=[{"role": "user", "content": email_text}],
@@ -337,7 +337,7 @@ def _draft_reply_body(email: dict, label: str) -> str:
     }.get(label, "a customer inquiry")
 
     msg = llm.messages.create(
-        model="claude-3-5-haiku-20241022",
+        model="claude-haiku-4-5-20251001",
         max_tokens=300,
         system=(
             "You are a professional customer support agent for a B2B SaaS company. "
@@ -364,7 +364,7 @@ def _draft_alert_message(email: dict) -> str:
     llm = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
     msg = llm.messages.create(
-        model="claude-3-5-haiku-20241022",
+        model="claude-haiku-4-5-20251001",
         max_tokens=150,
         system=(
             "You draft concise Slack messages for an engineering team about customer-reported bugs. "

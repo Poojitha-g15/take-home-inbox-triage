@@ -146,3 +146,46 @@ pytest test_triage.py -v
 **Two-layer token discipline.** The write token is held inside `TriageClient._write_headers()`, which raises `PermissionError` if no write token was supplied. The spam path plans zero actions, so `execute()` is never even called — the write token is provably unreachable on that path, not just "we promise not to call it."
 
 On top of that, the HITL gate in `execute(approved=bool)` is a second, independent check: even if a bug in the orchestrator accidentally passed `approved=True`, a read-only client would hard-fail before any HTTP request was made. Security in depth without extra infrastructure.
+## Inbox Triage Agent — What It Does & How to Run It
+
+### What it does
+
+The agent reads your inbox, classifies each email with an LLM, proposes the appropriate action, and waits for a human to approve before touching anything external.
+
+| Classification | Action taken (after approval) |
+|---|---|
+| **billing** | Drafts and sends a reply to the customer |
+| **bug_report** | Posts a concise alert to `#engineering` in Slack |
+| **sales_lead** | Drafts a reply **and** creates a CRM lead record |
+| **spam** | Logged and dropped — no write credentials used |
+
+No action is ever executed without explicit human approval. The agent *proposes*; you *approve*.
+
+### How to run it
+
+```bash
+# 1. Set up the environment
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp env.example .env          # fill in your ANTHROPIC_API_KEY
+
+# 2. Start the mock API (terminal 1)
+make serve
+
+# 3. Run the triage agent (terminal 2)
+python run_triage.py                   # interactive: approve each action
+python run_triage.py --auto-approve    # approve everything (demo / smoke test)
+python run_triage.py --dry-run         # classify & plan, never execute
+
+# 4. Inspect side effects
+make audit
+
+# 5. Run the test suite (no API key or running server needed)
+pytest test_triage.py -v
+```
+
+### The design decision I'm proudest of
+
+**Two-layer token discipline.** The write token is held inside `TriageClient._write_headers()`, which raises `PermissionError` if no write token was supplied. The spam path plans zero actions, so `execute()` is never even called — the write token is provably unreachable on that path, not just "we promise not to call it."
+
+On top of that, the HITL gate in `execute(approved=bool)` is a second, independent check: even if a bug in the orchestrator accidentally passed `approved=True`, a read-only client would hard-fail before any HTTP request was made. Security in depth without extra infrastructure.
